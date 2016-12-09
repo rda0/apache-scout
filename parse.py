@@ -29,10 +29,23 @@ def include( node ):
     new = apache_conf_parser.SimpleDirective()
     new.arguments.append(node.arguments[0])
     path_include = strip_quotes(node.arguments[0])
-    print(path_include)
+    if os.path.isdir(path_include):
+        path_abs = os.path.abspath(path_include)
+        if path_abs.startswith(server_root_abs):
+            path_include = path_abs + '/*'
+        elif path_include.endswith('/'):
+            path_include = path_include + '*'
+        else:
+            path_include = path_include + '/*'
+        new.arguments.pop()
+        new.arguments.append(path_include)
+        new.name = node.name
+        new = include_optional(new)
+        return new
+    #print(path_include)
     if os.path.isfile(path_include) != True and os.path.islink(path_include) != True:
         path_include = server_root_abs + '/' + path_include
-        print(path_include)
+        #print(path_include)
         if os.path.isfile(path_include) != True and os.path.islink(path_include) != True:
             new.name = 'Include(not found)'
             return new
