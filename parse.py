@@ -42,11 +42,19 @@ def include( node ):
     new = apache_conf_parser.ComplexDirective()
     new.header = node
     new.body.nodes = incl.nodes
-    node = new
-    node.body.nodes = nodes_parse(node.body.nodes)
+    new.body.nodes = nodes_parse(new.body.nodes)
+    return new
 
 def include_optional( node ):
-    return node
+    new = apache_conf_parser.ComplexDirective()
+    new.header = node
+    for path in glob.glob(node.arguments[0]):
+        incl = apache_conf_parser.SimpleDirective()
+        incl.name = 'Include'
+        incl.arguments.append(path)
+        incl = include(incl)
+        new.body.nodes.append(incl)
+    return new
 
 def node_parse( node ):
     if isinstance(node, apache_conf_parser.ComplexDirective):
