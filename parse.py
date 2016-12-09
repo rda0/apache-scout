@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, os, glob, socket
+import sys, os, glob, socket, re
 import apache_conf_parser
 import pprint
 
@@ -130,6 +130,23 @@ def nodes_print_directive_append( nodes, directive, append ):
                 sys.stdout.write(node.name + ' ')
                 node_print_arguments(node)
                 sys.stdout.write(append)
+
+#def nodes_print_directive_append_match( nodes, directive, append, match ):
+#    directive = directive.lower()
+#    for node in nodes:
+#        if isinstance(node, apache_conf_parser.ComplexDirective):
+#            if node.name.lower() == directive:
+#                m = re.search(match, ' '.join(node.arguments))
+#                if node
+#                sys.stdout.write(node.name + ' ')
+#                node_print_arguments(node)
+#                sys.stdout.write(append)
+#            nodes_print_directive_append(node.body.nodes, directive, append)
+#        elif isinstance(node, apache_conf_parser.SimpleDirective):
+#            if node.name.lower() == directive:
+#                sys.stdout.write(node.name + ' ')
+#                node_print_arguments(node)
+#                sys.stdout.write(append)
 
 def nodes_print_directive( nodes, directive ):
     nodes_print_directive_append(nodes, directive, '\n')
