@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys
+import sys, os
 import apache_conf_parser
 import pprint
 
@@ -11,9 +11,9 @@ path_serverroot = '/etc/apache2'
 
 indent = '    '
 
-arguments = 0
-arguments = len(sys.argv) - 1
-print('checking', arguments, 'configs.')
+arg_count = 0
+arg_count = len(sys.argv) - 1
+print('checking', arg_count, 'configs.')
 print('arguments', str(sys.argv))
 
 def strip_quotes( s ):
@@ -73,9 +73,24 @@ def nodes_print( nodes, level ):
     return level
 
 def main( argv ):
-    conf = apache_conf_parser.ApacheConfParser(path_config)
+    if arg_count != 2:
+        print('usage:', sys.argv[0], '<conf> <apache2_server_root>')
+        sys.exit(os.EX_USAGE)
+    conf_file = str(sys.argv[1])
+    server_root = str(sys.argv[2])
+    if os.path.isfile(conf_file) != True:
+        print('usage:', sys.argv[0], '<conf> <apache2_server_root>')
+        print('       <conf> must be a file')
+        sys.exit(os.EX_USAGE)
+    if os.path.isdir(server_root) != True:
+        print('usage:', sys.argv[0], '<conf> <apache2_server_root>')
+        print('       <apache2_server_root> must be a directory')
+        sys.exit(os.EX_USAGE)
+    conf_file_abs = os.path.abspath(conf_file)
+    conf = apache_conf_parser.ApacheConfParser(conf_file_abs)
     conf.nodes = nodes_parse(conf.nodes)
     nodes_print(conf.nodes, 0)
+    sys.exit(os.EX_OK)
 
 if __name__ == "__main__":
     main(sys.argv)
