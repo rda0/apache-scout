@@ -10,8 +10,8 @@ indent = '    '
 
 arg_count = 0
 arg_count = len(sys.argv) - 1
-print('checking', arg_count, 'configs.')
-print('arguments', str(sys.argv))
+#print('checking', arg_count, 'configs.')
+#print('arguments', str(sys.argv))
 
 def strip_quotes( s ):
     if s.startswith('"') and s.endswith('"'):
