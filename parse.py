@@ -46,7 +46,7 @@ def include( node ):
     node.body.nodes = nodes_parse(node.body.nodes)
 
 def include_optional( node ):
-
+    return node
 
 def node_parse( node ):
     if isinstance(node, apache_conf_parser.ComplexDirective):
