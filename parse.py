@@ -42,10 +42,8 @@ def include( node ):
         new.name = node.name
         new = include_optional(new)
         return new
-    #print(path_include)
     if os.path.isfile(path_include) != True and os.path.islink(path_include) != True:
         path_include = server_root_abs + '/' + path_include
-        #print(path_include)
         if os.path.isfile(path_include) != True and os.path.islink(path_include) != True:
             new.name = 'Include(not found)'
             return new
@@ -111,6 +109,23 @@ def nodes_print( nodes, level ):
     level -= 1
     return level
 
+def nodes_print_directive( nodes, directive ):
+    for node in nodes:
+        if isinstance(node, apache_conf_parser.ComplexDirective):
+            nodes_print_directive(node.body.nodes, directive)
+        elif isinstance(node, apache_conf_parser.SimpleDirective):
+            if node.name.lower() == directive:
+                print(node.name, node.arguments)
+
+def nodes_print_directive_args( nodes, directive ):
+    for node in nodes:
+        if isinstance(node, apache_conf_parser.ComplexDirective):
+            nodes_print_directive_args(node.body.nodes, directive)
+        elif isinstance(node, apache_conf_parser.SimpleDirective):
+            if node.name.lower() == directive:
+                for arg in node.arguments:
+                    print(arg)
+
 def main( argv ):
     global server_root_abs
     usage = 'usage:', sys.argv[0], '<conf> [apache2_server_root]'
@@ -134,7 +149,11 @@ def main( argv ):
     os.chdir(server_root_abs)
     conf = apache_conf_parser.ApacheConfParser(conf_file_abs)
     conf.nodes = nodes_parse(conf.nodes)
-    nodes_print(conf.nodes, 0)
+#    nodes_print(conf.nodes, 0)
+
+    nodes_print_directive_args(conf.nodes, 'servername')
+    nodes_print_directive_args(conf.nodes, 'serveralias')
+
     sys.exit(os.EX_OK)
 
 if __name__ == "__main__":
