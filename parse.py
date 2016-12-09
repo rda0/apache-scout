@@ -37,7 +37,11 @@ def node_parse( node ):
                 if os.path.isfile(server_root_abs + '/' + path_include) != True:
                     node.name = 'Include(not found)'
                     return node
-            incl = apache_conf_parser.ApacheConfParser(path_include)
+            try:
+                incl = apache_conf_parser.ApacheConfParser(path_include)
+            except:
+                node.name = 'Include(' + apache_conf_parser exception + ')'
+                return node
             new = apache_conf_parser.ComplexDirective()
             new.header = node
             new.body.nodes = incl.nodes
