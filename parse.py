@@ -26,19 +26,21 @@ def print_indent( level ):
         sys.stdout.write(indent_multi)
 
 def include( node ):
+    new = apache_conf_parser.SimpleDirective()
+    new.arguments.append(node.arguments[0])
     path_include = strip_quotes(node.arguments[0])
     print(path_include)
-    if os.path.isfile(path_include) != True:
+    if os.path.isfile(path_include) != True and os.path.islink(path_include) != True:
         path_include = server_root_abs + '/' + path_include
         print(path_include)
-        if os.path.isfile(path_include) != True:
-            node.name = 'Include(not found)'
-            return node
+        if os.path.isfile(path_include) != True and os.path.islink(path_include) != True:
+            new.name = 'Include(not found)'
+            return new
     try:
         incl = apache_conf_parser.ApacheConfParser(path_include)
     except:
-        node.name = 'Include(apache_conf_parser exception)'
-        return node
+        new.name = 'Include(apache_conf_parser exception)'
+        return new
     new = apache_conf_parser.ComplexDirective()
     new.header = node
     new.body.nodes = incl.nodes
