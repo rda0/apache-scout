@@ -33,7 +33,7 @@ def node_parse( node ):
             path_include = strip_quotes(node.arguments[0])
             print(path_include)
             if os.path.isfile(path_include) != True:
-                path_include = os.path.isfile(server_root_abs + '/' + path_include
+                path_include = server_root_abs + '/' + path_include
                 print(path_include)
                 if os.path.isfile(path_include) != True:
                     node.name = 'Include(not found)'
