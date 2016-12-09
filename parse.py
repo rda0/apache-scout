@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, os
+import sys, os, glob
 import apache_conf_parser
 import pprint
 
@@ -25,29 +25,37 @@ def print_indent( level ):
         indent_multi = indent * l
         sys.stdout.write(indent_multi)
 
+def include( node ):
+    path_include = strip_quotes(node.arguments[0])
+    print(path_include)
+    if os.path.isfile(path_include) != True:
+        path_include = server_root_abs + '/' + path_include
+        print(path_include)
+        if os.path.isfile(path_include) != True:
+            node.name = 'Include(not found)'
+            return node
+    try:
+        incl = apache_conf_parser.ApacheConfParser(path_include)
+    except:
+        node.name = 'Include(apache_conf_parser exception)'
+        return node
+    new = apache_conf_parser.ComplexDirective()
+    new.header = node
+    new.body.nodes = incl.nodes
+    node = new
+    node.body.nodes = nodes_parse(node.body.nodes)
+
+def include_optional( node ):
+
+
 def node_parse( node ):
     if isinstance(node, apache_conf_parser.ComplexDirective):
         node.body.nodes = nodes_parse(node.body.nodes)
     elif isinstance(node, apache_conf_parser.SimpleDirective):
         if node.name.lower() == 'include':
-            path_include = strip_quotes(node.arguments[0])
-            print(path_include)
-            if os.path.isfile(path_include) != True:
-                path_include = server_root_abs + '/' + path_include
-                print(path_include)
-                if os.path.isfile(path_include) != True:
-                    node.name = 'Include(not found)'
-                    return node
-            try:
-                incl = apache_conf_parser.ApacheConfParser(path_include)
-            except:
-                node.name = 'Include(apache_conf_parser exception)'
-                return node
-            new = apache_conf_parser.ComplexDirective()
-            new.header = node
-            new.body.nodes = incl.nodes
-            node = new
-            node.body.nodes = nodes_parse(node.body.nodes)
+            node = include(node)
+        elif node.name.lower() == 'includeoptional':
+            node = include_optional(node)
     return node
 
 def nodes_parse( nodes ):
@@ -99,7 +107,7 @@ def main( argv ):
     else:
         print(usage)
         sys.exit(os.EX_USAGE)
-
+    os.chdir(server_root_abs)
     conf = apache_conf_parser.ApacheConfParser(conf_file_abs)
     conf.nodes = nodes_parse(conf.nodes)
     nodes_print(conf.nodes, 0)
