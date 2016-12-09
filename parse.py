@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, os, glob
+import sys, os, glob, socket
 import apache_conf_parser
 import pprint
 
@@ -109,29 +109,78 @@ def nodes_print( nodes, level ):
     level -= 1
     return level
 
-def nodes_print_directive( nodes, directive ):
+def node_print_arguments_append( node, append ):
+    for arg in node.arguments:
+        sys.stdout.write(arg + append)
+
+def node_print_arguments( node ):
+    node_print_arguments_append( node, ' ' )
+
+def nodes_print_directive_append( nodes, directive, append ):
     directive = directive.lower()
     for node in nodes:
         if isinstance(node, apache_conf_parser.ComplexDirective):
             if node.name.lower() == directive:
-                print(node.name, node.arguments)
-            nodes_print_directive(node.body.nodes, directive)
+                sys.stdout.write(node.name + ' ')
+                node_print_arguments(node)
+                sys.stdout.write(append)
+            nodes_print_directive_append(node.body.nodes, directive, append)
         elif isinstance(node, apache_conf_parser.SimpleDirective):
             if node.name.lower() == directive:
-                print(node.name, node.arguments)
+                sys.stdout.write(node.name + ' ')
+                node_print_arguments(node)
+                sys.stdout.write(append)
+
+def nodes_print_directive( nodes, directive ):
+    nodes_print_directive_append(nodes, directive, '\n')
 
 def nodes_print_directive_args( nodes, directive ):
+    nodes_print_directive_args_append( nodes, directive, '\n')
+
+def nodes_print_directive_args_append( nodes, directive, append ):
     directive = directive.lower()
     for node in nodes:
         if isinstance(node, apache_conf_parser.ComplexDirective):
             if node.name.lower() == directive:
                 for arg in node.arguments:
-                    print(arg)
-            nodes_print_directive_args(node.body.nodes, directive)
+                    sys.stdout.write(arg + append)
+            nodes_print_directive_args_append(node.body.nodes, directive, append)
         elif isinstance(node, apache_conf_parser.SimpleDirective):
             if node.name.lower() == directive:
                 for arg in node.arguments:
-                    print(arg)
+                    sys.stdout.write(arg + append)
+ 
+def nodes_print_vhost_table_virtualhost( nodes, arg ):
+    for node in nodes:
+        if isinstance(node, apache_conf_parser.ComplexDirective):
+            if node.name.lower() == 'virtualhost':
+                if node.arguments[0].lower().endswith(arg):
+                    sys.stdout.write(node.arguments[0].split(':')[0])
+                    sys.stdout.write(' | ')
+                    nodes_print_directive_args_append(node.body.nodes, 'ServerName', '')
+                    sys.stdout.write(' | ')
+                    nodes_print_directive_args_append(node.body.nodes, 'ServerAlias', '<br/>')
+                    sys.stdout.write(' | ')
+                    nodes_print_directive_args_append(node.body.nodes, 'DocumentRoot', '')
+                    sys.stdout.write(' | ')
+                    nodes_print_directive_append(node.body.nodes, 'RedirectMatch', '<br/>')
+                    nodes_print_directive_append(node.body.nodes, 'Redirect', '<br/>')
+                    sys.stdout.write('\n')
+            else:
+                nodes_print_vhost_table_virtualhost(node.body.nodes, arg)
+
+
+def nodes_print_vhost_table( nodes, arg ):
+    print('Listen | ServerName | ServerAlias | DocumentRoot | Redirect HTTPS')
+    print('--- | --- | --- | --- | ---')
+    nodes_print_vhost_table_virtualhost(nodes, arg)
+
+def nodes_print_vhost_markdown( nodes ):
+    print('# vhost report of', socket.gethostname())
+    print('## http vhosts')
+    nodes_print_vhost_table( nodes, ':80' )
+    print('## https vhosts')
+    nodes_print_vhost_table( nodes, ':443' )
 
 def main( argv ):
     global server_root_abs
@@ -175,6 +224,11 @@ def main( argv ):
             if argument == 'dns':
                 nodes_print_directive_args(conf.nodes, 'servername')
                 nodes_print_directive_args(conf.nodes, 'serveralias')
+            else:
+                print('operation:', operation, argument, 'not implemented')
+        elif operation == 'markdown':
+            if argument == 'vhost_table':
+                nodes_print_vhost_markdown(conf.nodes)
             else:
                 print('operation:', operation, argument, 'not implemented')
         else:
