@@ -33,14 +33,15 @@ def node_parse( node ):
             path_include = strip_quotes(node.arguments[0])
             pprint.pprint(path_include)
             if os.path.isfile(path_include) != True:
-                pprint.pprint(os.path.isfile(server_root_abs + '/' + path_include))
-                if os.path.isfile(server_root_abs + '/' + path_include) != True:
+                path_include = os.path.isfile(server_root_abs + '/' + path_include
+                pprint.pprint(path_include))
+                if os.path.isfile(path_include) != True:
                     node.name = 'Include(not found)'
                     return node
             try:
                 incl = apache_conf_parser.ApacheConfParser(path_include)
             except:
-                node.name = 'Include(' + apache_conf_parser exception + ')'
+                node.name = 'Include(apache_conf_parser exception)'
                 return node
             new = apache_conf_parser.ComplexDirective()
             new.header = node
