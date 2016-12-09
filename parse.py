@@ -89,6 +89,7 @@ def nodes_print( nodes, level ):
     return level
 
 def main( argv ):
+    global server_root_abs
     usage = 'usage:', sys.argv[0], '<conf> [apache2_server_root]'
     if arg_count == 1 or arg_count == 2:
         conf_file = str(sys.argv[1])
