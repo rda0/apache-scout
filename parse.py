@@ -110,16 +110,23 @@ def nodes_print( nodes, level ):
     return level
 
 def nodes_print_directive( nodes, directive ):
+    directive = directive.lower()
     for node in nodes:
         if isinstance(node, apache_conf_parser.ComplexDirective):
+            if node.name.lower() == directive:
+                print(node.name, node.arguments)
             nodes_print_directive(node.body.nodes, directive)
         elif isinstance(node, apache_conf_parser.SimpleDirective):
             if node.name.lower() == directive:
                 print(node.name, node.arguments)
 
 def nodes_print_directive_args( nodes, directive ):
+    directive = directive.lower()
     for node in nodes:
         if isinstance(node, apache_conf_parser.ComplexDirective):
+            if node.name.lower() == directive:
+                for arg in node.arguments:
+                    print(arg)
             nodes_print_directive_args(node.body.nodes, directive)
         elif isinstance(node, apache_conf_parser.SimpleDirective):
             if node.name.lower() == directive:
@@ -129,7 +136,7 @@ def nodes_print_directive_args( nodes, directive ):
 def main( argv ):
     global server_root_abs
     usage = 'usage:', sys.argv[0], '<conf> [apache2_server_root]'
-    if arg_count == 1 or arg_count == 2:
+    if arg_count >= 1 and arg_count <= 4:
         conf_file = str(sys.argv[1])
         if os.path.isfile(conf_file) != True:
             print(usage)
@@ -149,10 +156,32 @@ def main( argv ):
     os.chdir(server_root_abs)
     conf = apache_conf_parser.ApacheConfParser(conf_file_abs)
     conf.nodes = nodes_parse(conf.nodes)
-#    nodes_print(conf.nodes, 0)
+    
+    if arg_count == 3:
+        directive = str(sys.argv[3])
+        nodes_print_directive(conf.nodes, directive)
+        sys.exit(os.EX_OK)
 
-    nodes_print_directive_args(conf.nodes, 'servername')
-    nodes_print_directive_args(conf.nodes, 'serveralias')
+    if arg_count == 4:
+        operation = str(sys.argv[3])
+        argument = str(sys.argv[4])
+        if operation == 'print':
+            nodes_print(conf.nodes, 0)
+        elif operation == 'print_directive':
+            nodes_print_directive(conf.nodes, argument)
+        elif operation == 'print_directive_args':
+            nodes_print_directive_args(conf.nodes, argument)
+        elif operation == 'print_all':
+            if argument == 'dns':
+                nodes_print_directive_args(conf.nodes, 'servername')
+                nodes_print_directive_args(conf.nodes, 'serveralias')
+            else:
+                print('operation:', operation, argument, 'not implemented')
+        else:
+            print('operation:', operation, 'not implemented')
+        sys.exit(os.EX_OK)
+
+    nodes_print(conf.nodes, 0)
 
     sys.exit(os.EX_OK)
 
