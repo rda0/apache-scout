@@ -5,9 +5,7 @@ import apache_conf_parser
 import pprint
 
 path_config = '/home/maedersv/tmp/vhosts.conf'
-
-# todo: add handling for relative (to ServerRoot) vs absolute path
-path_serverroot = '/etc/apache2'
+server_root_abs = '/etc/apache2'
 
 indent = '    '
 
@@ -34,6 +32,10 @@ def node_parse( node ):
     elif isinstance(node, apache_conf_parser.SimpleDirective):
         if node.name.lower() == 'include':
             path_include = strip_quotes(node.arguments[0])
+            if os.path.isfile(path_include) != True:
+                if os.path.isfile(server_root_abs + '/' + path_include) != True:
+                    node.name = 'Include(not found)'
+                    return node
             incl = apache_conf_parser.ApacheConfParser(path_include)
             new = apache_conf_parser.ComplexDirective()
             new.header = node
@@ -73,20 +75,25 @@ def nodes_print( nodes, level ):
     return level
 
 def main( argv ):
-    if arg_count != 2:
-        print('usage:', sys.argv[0], '<conf> <apache2_server_root>')
-        sys.exit(os.EX_USAGE)
-    conf_file = str(sys.argv[1])
-    server_root = str(sys.argv[2])
-    if os.path.isfile(conf_file) != True:
-        print('usage:', sys.argv[0], '<conf> <apache2_server_root>')
-        print('       <conf> must be a file')
-        sys.exit(os.EX_USAGE)
-    if os.path.isdir(server_root) != True:
-        print('usage:', sys.argv[0], '<conf> <apache2_server_root>')
-        print('       <apache2_server_root> must be a directory')
-        sys.exit(os.EX_USAGE)
-    conf_file_abs = os.path.abspath(conf_file)
+    usage = 'usage:', sys.argv[0], '<conf> [apache2_server_root]'
+    if arg_count == 1 or arg_count == 2:
+        conf_file = str(sys.argv[1])
+        if os.path.isfile(conf_file) != True:
+            print(usage)
+            print('       <conf> must be a file')
+            sys.exit(os.EX_USAGE)
+        conf_file_abs = os.path.abspath(conf_file)
+        if arg_count == 2:
+            server_root = str(sys.argv[2])
+            if os.path.isdir(server_root) != True:
+                print(usage)
+                print('       [apache2_server_root] must be a directory')
+                sys.exit(os.EX_USAGE)
+            server_root_abs = os.path.abspath(server_root)
+        else:
+            print(usage)
+            sys.exit(os.EX_USAGE)
+
     conf = apache_conf_parser.ApacheConfParser(conf_file_abs)
     conf.nodes = nodes_parse(conf.nodes)
     nodes_print(conf.nodes, 0)
