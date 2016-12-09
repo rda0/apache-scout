@@ -4,7 +4,6 @@ import sys, os
 import apache_conf_parser
 import pprint
 
-path_config = '/home/maedersv/tmp/vhosts.conf'
 server_root_abs = '/etc/apache2'
 
 indent = '    '
@@ -90,9 +89,9 @@ def main( argv ):
                 print('       [apache2_server_root] must be a directory')
                 sys.exit(os.EX_USAGE)
             server_root_abs = os.path.abspath(server_root)
-        else:
-            print(usage)
-            sys.exit(os.EX_USAGE)
+    else:
+        print(usage)
+        sys.exit(os.EX_USAGE)
 
     conf = apache_conf_parser.ApacheConfParser(conf_file_abs)
     conf.nodes = nodes_parse(conf.nodes)
