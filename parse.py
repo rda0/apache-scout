@@ -166,7 +166,23 @@ def nodes_print_directive_args_append( nodes, directive, append ):
             if node.name.lower() == directive:
                 for arg in node.arguments:
                     sys.stdout.write(arg + append)
- 
+
+def nodes_get_directive_args( nodes, directive, array ):
+    nodes_get_directive_args_append( nodes, directive, '', array)
+
+def nodes_get_directive_args_append( nodes, directive, append, array ):
+    directive = directive.lower()
+    for node in nodes:
+        if isinstance(node, apache_conf_parser.ComplexDirective):
+            if node.name.lower() == directive:
+                for arg in node.arguments:
+                    array.append(arg + append)
+            nodes_get_directive_args_append(node.body.nodes, directive, append, array)
+        elif isinstance(node, apache_conf_parser.SimpleDirective):
+            if node.name.lower() == directive:
+                for arg in node.arguments:
+                    array.append(arg + append)
+
 def nodes_print_vhost_table_virtualhost( nodes, arg ):
     for node in nodes:
         if isinstance(node, apache_conf_parser.ComplexDirective):
@@ -199,10 +215,47 @@ def nodes_print_vhost_markdown( nodes ):
     print('## https vhosts')
     nodes_print_vhost_table( nodes, ':443' )
 
+def nodes_print_dns_all( nodes ):
+    array = []
+    nodes_get_directive_args(nodes, 'servername', array)
+    nodes_get_directive_args(nodes, 'serveralias', array)
+    for element in sorted(set(array)):
+        print(element)
+
+def nodes_print_dns_valid( nodes ):
+    array = []
+    nodes_get_directive_args(nodes, 'servername', array)
+    nodes_get_directive_args(nodes, 'serveralias', array)
+    p = re.compile('^(.*\.)*.*\..*$')
+    for element in sorted(set(array)):
+        m = p.match(element)
+        if m:
+            print(element)
+
+def nodes_print_dns_hostname( nodes ):
+    array = []
+    nodes_get_directive_args(nodes, 'servername', array)
+    nodes_get_directive_args(nodes, 'serveralias', array)
+    p = re.compile('^(.*\.)*.*\..*$')
+    for element in sorted(set(array)):
+        m = p.match(element)
+        if m is None:
+            print(element)
+
+def nodes_print_dns_tld_match( nodes, pattern ):
+    array = []
+    nodes_get_directive_args(nodes, 'servername', array)
+    nodes_get_directive_args(nodes, 'serveralias', array)
+    p = re.compile('^(.*\.)*.*\.' + pattern + '$')
+    for element in sorted(set(array)):
+        m = p.match(element)
+        if m:
+            print(element)
+
 def main( argv ):
     global server_root_abs
     usage = 'usage:', sys.argv[0], '<conf> [apache2_server_root]'
-    if arg_count >= 1 and arg_count <= 4:
+    if arg_count >= 1 and arg_count <= 5:
         conf_file = str(sys.argv[1])
         if os.path.isfile(conf_file) != True:
             print(usage)
@@ -228,7 +281,7 @@ def main( argv ):
         nodes_print_directive(conf.nodes, directive)
         sys.exit(os.EX_OK)
 
-    if arg_count == 4:
+    if arg_count >= 4 and arg_count <= 5:
         operation = str(sys.argv[3])
         argument = str(sys.argv[4])
         if operation == 'print':
@@ -237,10 +290,19 @@ def main( argv ):
             nodes_print_directive(conf.nodes, argument)
         elif operation == 'print_directive_args':
             nodes_print_directive_args(conf.nodes, argument)
-        elif operation == 'print_all':
-            if argument == 'dns':
-                nodes_print_directive_args(conf.nodes, 'servername')
-                nodes_print_directive_args(conf.nodes, 'serveralias')
+        elif operation == 'print_dns':
+            if argument == 'all':
+                nodes_print_dns_all(conf.nodes)
+            elif argument == 'valid':
+                nodes_print_dns_valid(conf.nodes)
+            elif argument == 'hostname':
+                nodes_print_dns_hostname(conf.nodes)
+            elif argument == 'tld_match':
+                if arg_count == 5:
+                    pattern = str(sys.argv[5])
+                    nodes_print_dns_tld_match(conf.nodes, pattern)
+                else:
+                    print('operation:', operation, argument, '<pattern>: no <pattern> supplied')
             else:
                 print('operation:', operation, argument, 'not implemented')
         elif operation == 'markdown':
