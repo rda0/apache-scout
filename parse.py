@@ -183,6 +183,18 @@ def nodes_get_directive_args_append( nodes, directive, append, array ):
                 for arg in node.arguments:
                     array.append(arg + append)
 
+def nodes_print_vhost_https_dns_match( nodes, arg ):
+    for node in nodes:
+        if isinstance(node, apache_conf_parser.ComplexDirective):
+            if node.name.lower() == 'virtualhost':
+                if node.arguments[0].lower().endswith('443'):
+                    if node.arguments[0].lower().startswith(arg):
+                        nodes_print_dns_valid(node.body.nodes)
+                        #nodes_print_directive_args_append(node.body.nodes, 'ServerName', '\n')
+                        #nodes_print_directive_args_append(node.body.nodes, 'ServerAlias', '\n')
+            else:
+                nodes_print_vhost_https_dns_match(node.body.nodes, arg)
+
 def nodes_print_vhost_table_virtualhost( nodes, arg ):
     for node in nodes:
         if isinstance(node, apache_conf_parser.ComplexDirective):
@@ -301,6 +313,12 @@ def main( argv ):
                 if arg_count == 5:
                     pattern = str(sys.argv[5])
                     nodes_print_dns_tld_match(conf.nodes, pattern)
+                else:
+                    print('operation:', operation, argument, '<pattern>: no <pattern> supplied')
+            elif argument == 'vhost_https':
+                if arg_count == 5:
+                    pattern = str(sys.argv[5])
+                    nodes_print_vhost_https_dns_match(conf.nodes, pattern)
                 else:
                     print('operation:', operation, argument, '<pattern>: no <pattern> supplied')
             else:
